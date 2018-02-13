@@ -81,6 +81,11 @@ while(time.time() - start_time <= deadline):
 print("--- %s seconds ---" % (time.time() - start_time))  # time counter
 print(score, '\n', finalmap, '\n', finaltime)
 
-with open('answer.txt', 'wt') as f:
-    f.write('X,1,2,3')
-    # f.write(1)
+# with open('answer.txt', 'wt') as f:
+#     f.write('X,1,2,3''\n')
+#     f.w
+#     # f.write(1)
+print(score, file=open("output.txt", "a"))
+print(finaltime, file=open("output.txt", "a"))
+for i in range(0, len(finalmap)):
+    print(finalmap[i], file=open("output.txt", "a"))
