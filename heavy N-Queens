@@ -1,0 +1,253 @@
+#!/usr/bin/env python2
+# -*- coding: utf-8 -*-
+"""
+Created on Wed Jan 31 13:32:58 2018
+
+@author: minming
+"""
+import numpy as np
+import time
+
+        
+class HeavyNQueens(object):
+
+    def __init__(self,n):
+        # define an empty board
+        self.board = np.matrix([[0]*n]*n)
+        self.n = n
+    # form a chess board
+    def InitBoard(self):
+        n = self.n
+        self.queens = []
+        for _ in range(n):
+            i = np.random.randint(0,n)
+            self.board[i, _]=1
+            self.queens.append(i)
+        
+    # return a array of queens' position in each column
+    
+    def setqueens(self, board):
+        queens = []
+        for i in range(self.n):
+            queens.append(board[:,i].T.tolist()[0].index(1))
+        self.queens = queens
+        
+            
+    # calculate # queens under attacking directly or indirectly
+    def AtkQuens(self, board):
+        self.setqueens(board)
+        n = self.n
+        x = 0
+        queens = self.queens
+        for _ in range(n-1):
+            i = queens[_]
+            # consider the same row
+            for k in range(1,n-_):
+                if board[i,_+k]==1:
+                    x += 1
+            # consider 2 diagonal directions
+            for k in range(1,i+1):
+                try:
+                    if board[i-k, _+k]==1: x+=1
+                except IndexError:
+                    break
+            for k in range(1,n-i):
+                try:
+                    if board[i+k, _+k]==1: x+=1
+                except IndexError:
+                    break
+        #self.attnum = x
+        return x
+        
+    def climbing(self):     #implement hill climbing by one step
+        #x = self.AtkQuens(self.board)
+        n = self.n
+        '''
+        if x == 0: 
+            print "Already reach optimal"
+            print self.board
+         '''   
+        m = np.matrix([[0]*n]*n) # use m to record cost
+       
+        for i in range(n):
+            for j in range(n):
+                board = self.board.copy()
+                board[:, i] = 0
+                board[j, i] = 1
+                m[j,i] = 10 + self.AtkQuens(board) if self.AtkQuens(board)>0 else 0 
+        self.m = m
+        rown, coln = m.argmin()/n, m.argmin()%n
+        #print m.argmin(), rown, coln
+        #update chess board
+        self.board[:, coln] = 0
+        self.board[rown, coln] = 1
+        move = [rown, coln]
+        return move
+        
+    # return the solution by hill climbing
+    def solution_hc(self):
+        n = self.n
+        board = np.matrix([[0]*n]*n)
+        boo = False
+        moves = []
+        while not boo:
+            if boo: return self.board
+            moves.append(self.climbing())
+            boo = board == self.board
+            boo = boo.all()
+            board = self.board.copy()
+        return board, moves
+    
+    # we can set self.board by this method
+    def setboard(self, board):
+        self.board = board
+            
+    def A_star(self):
+        n = self.n
+        
+        m = np.matrix([[0.]*n]*n) # use m to record cost
+        for i in range(n):
+            for j in range(n):
+                board = self.board.copy()
+                board[:, i] = 0
+                board[j, i] = 1
+                m[j,i] = 10 + self.AtkQuens(board) if self.AtkQuens(board)>0 else 0 
+                m[j,i] += 10 + (q.queens[i]-j)**2 if (q.queens[i]-j)**2>0 else 0
+                
+        self.m = m.copy()
+        m[q.queens,range(n)] = 1000000
+        #self.m = m
+        rown, coln = m.argmin()/n, m.argmin()%n
+        self.board[:, coln] = 0
+        self.board[rown, coln] = 1
+        self.setqueens(self.board)
+        return m
+        
+        
+    
+    def solution_A_star(self):
+        n = self.n
+        L = self.AtkQuens(self.board)+10 if self.AtkQuens(self.board)>0 else 0
+        #L = 10
+        if L==0: return self.board, 0, 0, 1
+        initialboard = self.board.copy()
+        while True: # Using Iterative Deepening
+            self.setboard(initialboard)
+            atcquens = [L]
+            boards = [self.board.copy()]
+            ind = 0
+            expnodes = 1 #record # of nodes expanded
+            depth = [1] #record depth of the tree
+            while atcquens[0] != 0 and min(atcquens)<1000000:
+                expnodes += 1
+                m = self.A_star()
+                m[m>L] = 1000000
+                for i in range(n**2):
+                    row, col = i/n, i%n
+                    if m[row, col]==1000000: continue
+                    new = self.board.copy()
+                    new[:, col] = 0
+                    new[row, col] = 1
+                    boards.append(new)
+                    atcquens.append(m[row, col]+atcquens[ind])
+                    depth.append(depth[ind]+1)
+                    self.setqueens(new)
+                    if self.AtkQuens(new)==0:
+                        return new, expnodes, depth[-1], len(depth)
+                atcquens[ind] = 1000000
+                ind = atcquens.index(min(atcquens))
+                self.setboard(boards[ind])    
+            L = 2+L #increase L by 2
+                
+        
+# do input here        
+size = input('What is your n in your N Queens problem: ')
+method = input('Which method? (1 for hill climbing, 2 for A star) ')
+
+if method == 2:
+    moves = []
+    q = HeavyNQueens(size)
+    q.InitBoard()
+    queens1 = q.queens[:]
+    print 'The initial state looks like this:'
+    print q.board
+    t1 = time.time()
+    solution, expnodes, depth, cost = q.solution_A_star()
+    t2 = time.time()
+    q.setqueens(solution)
+    queens2 = q.queens[:]
+    print 'The # of nodes expanded is : '+str(expnodes)
+    print 'running time:'+str(t2-t1)
+    print solution
+    print 'The # of pairs of attacking queens are: '+str(q.AtkQuens(solution))
+    #print 'Depth of search tree is: '+str(depth)
+    print 'The effective branching factor is '+ str(float(expnodes)/depth)
+    print 'The cost is: '+ str(cost)
+    for i in range(size):
+        if queens1[i] != queens2[i]:
+            move = [queens2[i], i]
+            moves.append(move)
+    print 'The moves are:'
+    print moves
+    
+
+if method == 1:
+    t1 = time.time()
+    # with restarts
+    nodes = 0
+    for i in range(50):
+        q = HeavyNQueens(size)
+        q.InitBoard()
+        init = q.board.copy()
+        solution = q.solution_hc()
+        nodes = nodes + len(solution[1])
+        if q.AtkQuens(solution[0]) == 0: break
+    t2 = time.time()
+    print 'The initial state looks like this:'
+    print init
+    print 'running time:'+str(t2-t1)
+    print 'The solution looks like this:'
+    print solution[0]
+    print 'The # of pairs of attacking queens are: '+str(q.AtkQuens(solution[0]))
+    print 'The moves to get this optimal is :'
+    print solution[1]
+    cost = size*(size-1)*len(solution[1])
+    print 'The cost is: '+ str(cost)
+    
+    
+'''
+# Calculating effective factors for A* method 
+en = [0.]
+dep = [0.]
+for i in range(10):
+    q = HeavyNQueens(5)
+    q.InitBoard()
+    solution, expnodes, depth = q.solution_A_star()
+    en.append(expnodes)
+    dep.append(depth)
+print 'The effective factors for A* is:' + str(sum(en)/sum(dep))
+'''   
+    
+'''
+# Calculating effective factors for greedy hill climbing
+en = [0.]
+dep = [0.] # make sure they are float type
+for i in range(10):
+    nodes = 0
+    for j in range(50):
+        q = HeavyNQueens(7)
+        q.InitBoard()
+        init = q.board.copy()
+        solution = q.solution_hc()
+        nodes += len(solution)
+        if q.AtkQuens(solution[0]) == 0: break
+        
+    en.append(nodes)
+    dep.append(len(solution))
+print 'The effective factors for greedy hill climbing is:' + str(sum(en)/sum(dep))
+'''   
+    
+    
+    
+    
+    
