@@ -16,6 +16,8 @@ score = float('-inf')
 oldscore = float('-inf')
 newtime = float('inf')
 # setup
+iteration = 0
+iteration1 = 0
 while(time.time() - start_time <= deadline):
     # restart
     indu, comm, resi, mymap, toxic, scenic, Nx, Ny\
@@ -34,6 +36,8 @@ while(time.time() - start_time <= deadline):
         score = newscore
         finalmap = copy.deepcopy(realmap)
         finaltime = time.time() - start_time
+
+    oldscore = float('-inf')
     # get alterpos
     spacerem = copy.deepcopy(randomseed)
     for removepos in positions:
@@ -41,9 +45,10 @@ while(time.time() - start_time <= deadline):
 
     # new round start
     realposition = copy.deepcopy(positions)
-
-    while(newscore != oldscore):
+    iteration = iteration+1
+    while(newscore > oldscore):
         # get the best score
+        iteration1 = iteration1 + 1
         oldscore = newscore
         temp_score = float('-inf')
         new_positions = copy.deepcopy(realposition)
@@ -64,9 +69,11 @@ while(time.time() - start_time <= deadline):
                     newscore = temp_score
                     realmap1 = copy.deepcopy(temp_map)
                     realposition1 = copy.deepcopy(alter_position)
+                # print(realposition1, alter_position, iteration, temp_score,
+                #       newscore)
 
         realposition = copy.deepcopy(realposition1)
-
+        # print(realposition, iteration)
         spacerem = copy.deepcopy(randomseed)
         for removepos in realposition:
             spacerem.remove(removepos)
@@ -89,3 +96,5 @@ print(score, file=open("output.txt", "a"))
 print(finaltime, file=open("output.txt", "a"))
 for i in range(0, len(finalmap)):
     print(finalmap[i], file=open("output.txt", "a"))
+
+print(iteration, iteration1)
